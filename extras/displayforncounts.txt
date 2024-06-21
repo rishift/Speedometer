@@ -1,0 +1,11 @@
+if (displayCounter++ > DISPLAYS)
+{
+	clear();
+	displayed = 0;
+	displayCounter = 0;
+} 
+else
+{
+	if (displayed)
+ 		show(avgSpeed);
+}

@@ -2,15 +2,15 @@
 
 #define DISTANCE 2.032
 #define SAMPLES 3
-#define DISPLAY_DURATION 40000
+#define DISPLAYS 5
 
 #define SENSOR_PIN 2
 #define BUTTON_PIN 3
 
 
 unsigned char displayPins[2][7] = {
-	{5, 4, 6, 7, 8, 9, 10},
-	{11, 12, A0, A3, A1, A2, A4},
+	{  5,  4,  6,  7,  8,  9, 10 },
+	{ 11, 12, A0, A3, A1, A2, A4 },
 };
 
 unsigned char digits[] = {
@@ -26,14 +26,17 @@ unsigned char digits[] = {
 	0b1111011,
 };
 
-unsigned long then = millis();
-unsigned long now;
+unsigned long then = 0;
+unsigned long now = 0;
+unsigned long duration = 0;
+float instSpeed = 0;
 float sumSpeed = 0;
 unsigned char avgSpeed = 0;
 unsigned char counter = 0;
-bool display = true;
-unsigned long lastDisplayTime = then;
+unsigned long lastDisplayTime = 0;
 
+
+bool displayed = 1;
 
 void clear()
 {
@@ -43,7 +46,6 @@ void clear()
 		digitalWrite(displayPins[1][i], 0);
 	}
 }
-
 
 void show(unsigned char number)
 {
@@ -57,27 +59,29 @@ void show(unsigned char number)
 }
 
 
-void updateSpeed()
+void handler()
 {
 	now = millis();
-	sumSpeed += DISTANCE * 3600 / (now - then);
+	instSpeed = DISTANCE * 3600 / (now - then);
+	sumSpeed += instSpeed;
 	if (++counter > SAMPLES)
 	{
 		avgSpeed = sumSpeed / SAMPLES;
 		counter = sumSpeed = 0;
 
-		if (now - lastDisplayTime > DISPLAY_DURATION)
+		if (now - lastDisplayTime > 30000)
 		{
 			clear();
-			display = false;
+			displayed = 0;
 			lastDisplayTime = now;
 		}
-		else if (display)
-			show(avgSpeed);
+		else
+			if (displayed)
+				show(avgSpeed);
+
 	}
 	then = now;
 }
-
 
 void setup()
 {
@@ -89,15 +93,16 @@ void setup()
 		pinMode(displayPins[1][i], OUTPUT);
 	}
 
-	attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), updateSpeed, FALLING);
-}
+	attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), handler, FALLING);
 
+
+}
 
 void loop()
 {
 	if (!digitalRead(BUTTON_PIN))
 	{
-		display = 1;
+		displayed = 1;
 		delay(200);
 	}
 	delay(50);
